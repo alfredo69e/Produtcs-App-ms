@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+
+  nats-server:
+    image: nats:latest
+    ports:
+      - 8222:8222
+
+  client-gateway:
+    image: client-gateway
+    build: ./client-gateway
+    ports:
+      - ${PORT_GATEWAY}:3000
+    volumes:
+      - ./client-gateway/src:/usr/src/app/src
+    command: yarn start:dev
+    env_file:
+      - ./client-gateway/.env
+    depends_on:
+      - nats-server
+  
+  products-ms:
+    image: products-ms
+    build: ./products-ms
+    # ports:
+    #   - PORT:3000
+    volumes:
+      - ./products-ms/src:/usr/src/app/src
+    command: yarn start:dev
+    env_file:
+      - ./products-ms/.env
+    # environment:
+    #   - NATS_SERVERS=nats://nats-server:4222
+    #   - DATABASE_URL=file:./dev.db
+    depends_on:
+      - client-gateway
+
+
+  orders-ms:
+    image: orders-ms
+    build: ./orders-ms
+    # ports:
+    #   - 3003:3000
+    volumes:
+      - ./orders-ms/src:/usr/src/app/src
+    command: yarn start:dev
+    env_file:
+      - ./orders-ms/.env
+    depends_on:
+      - client-gateway
+      - order-db
+
+  order-db:
+    container_name: orders_database
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - ./orders-ms/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ordersdb
+
