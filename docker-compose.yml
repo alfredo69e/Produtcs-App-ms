@@ -64,3 +64,17 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ordersdb
 
+
+  payments-ms:
+    image: payments-ms
+    build: ./payments-ms
+    ports:
+      - 3002:3002
+    volumes:
+      - ./payments-ms/src:/usr/src/app/src
+    command: yarn start:dev
+    env_file:
+      - ./payments-ms/.env
+    depends_on:
+      - client-gateway
+
